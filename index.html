@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Larp Central</title>
 
 <style>
@@ -25,9 +25,59 @@ header {
     padding: 14px;
     font-size: 22px;
     font-weight: 700;
-    z-index: 10;
+    z-index: 20;
     background: rgba(10,10,15,0.6);
     backdrop-filter: blur(10px);
+}
+
+/* CATEGORY BAR */
+.topbar {
+    position: fixed;
+    top: 55px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    z-index: 20;
+}
+
+.topbar button {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: white;
+    cursor: pointer;
+}
+
+.topbar button:hover {
+    background: rgba(120,80,255,0.25);
+}
+
+/* SIDE CONTROL PANEL */
+.sidepanel {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 30;
+}
+
+.sidepanel button {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.08);
+    color: white;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+}
+
+.sidepanel button:hover {
+    background: rgba(120,80,255,0.4);
 }
 
 /* FEED */
@@ -46,14 +96,14 @@ header {
     justify-content: center;
 }
 
-/* MEDIA BOX */
-.media {
+/* MEDIA */
+.media, .prompt {
     width: 70%;
-    max-width: 600px;
+    max-width: 650px;
     border-radius: 16px;
     overflow: hidden;
     background: rgba(255,255,255,0.05);
-    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
 }
 
 /* IMAGE / VIDEO */
@@ -64,28 +114,13 @@ header {
     object-fit: cover;
 }
 
-/* OVERLAY UNDER MEDIA (your request) */
-.overlay {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    padding: 10px;
-    background: rgba(20,20,30,0.85);
+/* PROMPTS */
+.prompt {
+    padding: 20px;
 }
 
-.overlay button {
-    font-size: 12px;
-    padding: 6px 10px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    background: rgba(255,255,255,0.15);
-    color: white;
-}
-
-.overlay button:hover {
-    background: rgba(120,80,255,0.4);
-}
+/* HIDE OLD OVERLAY STYLE (NOT USED ANYMORE) */
+.overlay { display: none; }
 </style>
 </head>
 
@@ -93,21 +128,36 @@ header {
 
 <header>Larp Central</header>
 
+<div class="topbar">
+    <button onclick="load('Photos')">Photos</button>
+    <button onclick="load('Videos')">Videos</button>
+    <button onclick="load('Prompts')">Prompts</button>
+</div>
+
+<!-- SIDE ACTIONS -->
+<div class="sidepanel">
+    <button onclick="downloadCurrent()">Download</button>
+    <button onclick="copyCurrent()">Copy</button>
+</div>
+
+<!-- FEED -->
 <div class="feed" id="feed"></div>
 
 <script>
 const USER = "tyy-8";
 const REPO = "larpcentral";
-const BASE = `https://api.github.com/repos/${USER}/${REPO}/contents/Photos`;
+const BASE = `https://api.github.com/repos/${USER}/${REPO}/contents`;
 
-let observer;
+let currentItems = [];
+let currentIndex = 0;
 
-/* LOAD ONLY PHOTOS + VIDEOS */
-async function load() {
+/* LOAD CATEGORY */
+async function load(folder) {
     const feed = document.getElementById("feed");
     feed.innerHTML = "Loading...";
+    currentItems = [];
 
-    const res = await fetch(BASE);
+    const res = await fetch(`${BASE}/${folder}`);
     const files = await res.json();
 
     feed.innerHTML = "";
@@ -117,69 +167,76 @@ async function load() {
         const item = document.createElement("div");
         item.className = "item";
 
-        // IMAGE
-        if (file.name.match(/\.(jpg|png|jpeg|webp)$/)) {
+        const url = file.download_url;
+
+        /* PHOTOS */
+        if (folder === "Photos") {
             item.innerHTML = `
             <div class="media">
-                <img src="${file.download_url}">
-                <div class="overlay">
-                    <button onclick="downloadFile('${file.download_url}','${file.name}')">Download</button>
-                    <button onclick="copyLink('${file.download_url}')">Copy</button>
-                </div>
+                <img src="${url}">
             </div>`;
         }
 
-        // VIDEO
-        if (file.name.match(/\.(mp4|webm|mov)$/)) {
+        /* VIDEOS */
+        if (folder === "Videos") {
             item.innerHTML = `
             <div class="media">
-                <video class="vid" src="${file.download_url}" muted loop playsinline></video>
-
-                <div class="overlay">
-                    <button onclick="downloadFile('${file.download_url}','${file.name}')">Download</button>
-                    <button onclick="copyLink('${file.download_url}')">Copy</button>
-                </div>
+                <video class="vid" src="${url}" muted loop playsinline></video>
             </div>`;
         }
 
+        /* PROMPTS */
+        if (folder === "Prompts") {
+            const txt = await fetch(url).then(r => r.text());
+            const lines = txt.split("\n");
+
+            item.innerHTML = `
+            <div class="prompt">
+                <h2>${lines[0]}</h2>
+                <p style="opacity:0.7">${lines.slice(1).join(" ")}</p>
+            </div>`;
+        }
+
+        currentItems.push({ url, name: file.name });
         feed.appendChild(item);
     }
 
-    setupAutoplay();
+    setupObserver();
 }
 
-/* AUTOPLAY */
-function setupAutoplay() {
-    const videos = document.querySelectorAll(".vid");
+/* TRACK CURRENT ITEM */
+function setupObserver() {
+    const items = document.querySelectorAll(".item");
 
-    observer = new IntersectionObserver(entries => {
+    const observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
-            const v = entry.target;
-
             if (entry.isIntersecting) {
-                v.play().catch(() => {});
+                currentIndex = [...items].indexOf(entry.target);
+
+                const video = entry.target.querySelector("video");
+                if (video) video.play().catch(() => {});
             } else {
-                v.pause();
+                const video = entry.target.querySelector("video");
+                if (video) video.pause();
             }
         });
-    }, { threshold: 0.75 });
+    }, { threshold: 0.7 });
 
-    videos.forEach(v => {
-        v.muted = true;
-        v.playsInline = true;
-        observer.observe(v);
-    });
+    items.forEach(i => observer.observe(i));
 }
 
-/* REAL DOWNLOAD */
-function downloadFile(url, name) {
-    fetch(url)
+/* DOWNLOAD CURRENT */
+function downloadCurrent() {
+    const item = currentItems[currentIndex];
+    if (!item) return;
+
+    fetch(item.url)
         .then(r => r.blob())
         .then(blob => {
             const blobUrl = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = blobUrl;
-            a.download = name;
+            a.download = item.name;
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -187,12 +244,15 @@ function downloadFile(url, name) {
         });
 }
 
-/* COPY */
-function copyLink(url) {
-    navigator.clipboard.writeText(url);
+/* COPY CURRENT */
+function copyCurrent() {
+    const item = currentItems[currentIndex];
+    if (!item) return;
+    navigator.clipboard.writeText(item.url);
 }
 
-load();
+/* INIT */
+load("Photos");
 </script>
 
 </body>
