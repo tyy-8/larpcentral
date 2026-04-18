@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Larp Central</title>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
@@ -15,7 +16,7 @@ body {
     overflow-x: hidden;
 }
 
-/* subtle animated background glow */
+/* background glow */
 body::before {
     content: '';
     position: fixed;
@@ -26,6 +27,7 @@ body::before {
     left: -200px;
     filter: blur(80px);
     animation: float 8s ease-in-out infinite;
+    z-index: 0;
 }
 
 @keyframes float {
@@ -39,12 +41,16 @@ header {
     font-size: 30px;
     font-weight: 700;
     letter-spacing: 1px;
+    position: relative;
+    z-index: 1;
 }
 
 .searchbar {
     display: flex;
     justify-content: center;
     margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
 }
 
 .searchbar input {
@@ -64,6 +70,8 @@ nav {
     gap: 12px;
     margin: 15px 0 25px;
     flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
 }
 
 button {
@@ -82,55 +90,73 @@ button:hover {
     background: rgba(120,80,255,0.25);
 }
 
+/* 🔥 PINTEREST MASONRY */
 .container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 18px;
+    column-count: 4;
+    column-gap: 16px;
     padding: 20px;
+    position: relative;
+    z-index: 1;
 }
 
+@media (max-width: 1200px) {
+    .container { column-count: 3; }
+}
+@media (max-width: 800px) {
+    .container { column-count: 2; }
+}
+@media (max-width: 500px) {
+    .container { column-count: 1; }
+}
+
+/* CARD */
 .card {
+    break-inside: avoid;
+    margin-bottom: 16px;
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 18px;
     overflow: hidden;
-    transition: 0.3s;
+    transition: 0.25s;
     backdrop-filter: blur(14px);
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    animation: fadeIn 0.4s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: scale(0.95); }
-    to { opacity: 1; transform: scale(1); }
 }
 
 .card:hover {
-    transform: scale(1.04);
+    transform: translateY(-4px) scale(1.01);
     box-shadow: 0 20px 50px rgba(120,80,255,0.25);
 }
 
-.card img, .card video {
+/* MEDIA */
+.media {
     width: 100%;
-    height: 220px;
+    overflow: hidden;
+}
+
+.media img,
+.media video {
+    width: 100%;
+    display: block;
     object-fit: cover;
 }
 
-.card .content {
+/* PROMPTS */
+.content {
     padding: 12px;
 }
 
-.card h3 {
+.content h3 {
     margin: 0 0 6px;
     font-size: 15px;
 }
 
-.card p {
+.content p {
     font-size: 13px;
     opacity: 0.75;
     line-height: 1.4;
 }
 
+/* loader */
 .loader {
     text-align: center;
     padding: 40px;
@@ -138,6 +164,7 @@ button:hover {
 }
 </style>
 </head>
+
 <body>
 
 <header>Larp Central</header>
@@ -186,11 +213,19 @@ async function loadContent(type) {
         card.className = "card";
 
         if (type === "photos") {
-            card.innerHTML = `<img src="${file.download_url}">`;
+            card.innerHTML = `
+                <div class="media">
+                    <img src="${file.download_url}">
+                </div>
+            `;
         }
 
         if (type === "videos") {
-            card.innerHTML = `<video controls src="${file.download_url}"></video>`;
+            card.innerHTML = `
+                <div class="media">
+                    <video controls src="${file.download_url}"></video>
+                </div>
+            `;
         }
 
         if (type === "prompts") {
@@ -220,7 +255,12 @@ function filterContent() {
     container.innerHTML = "";
 
     allData.forEach(item => {
-        const text = (item.file.name + (item.title || "") + (item.text || "")).toLowerCase();
+        const text = (
+            item.file.name +
+            (item.title || "") +
+            (item.text || "")
+        ).toLowerCase();
+
         if (text.includes(value)) {
             container.appendChild(item.element);
         }
