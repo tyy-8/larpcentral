@@ -263,20 +263,39 @@ async function copyCurrent() {
     const item = currentItems[currentIndex];
     if (!item) return;
 
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = item.url;
+
     try {
-        const res = await fetch(item.url, { mode: "cors" });
-        const blob = await res.blob();
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+        });
 
-        const data = [new ClipboardItem({ [blob.type]: blob })];
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
 
-        await navigator.clipboard.write(data);
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
 
-        showToast("Image copied ✔");
+        canvas.toBlob(async (blob) => {
+            try {
+                await navigator.clipboard.write([
+                    new ClipboardItem({ "image/png": blob })
+                ]);
+
+                showToast("Image copied ✔");
+            } catch (e) {
+                console.log(e);
+                showToast("Clipboard blocked — use download instead");
+            }
+        }, "image/png");
+
     } catch (err) {
-        console.log("Image copy failed:", err);
-
-        // fallback: download trick (works everywhere)
-        await fallbackCopyAsImage(item.url);
+        console.log("Image load failed:", err);
+        showToast("Failed to copy image");
     }
 }
 /* INIT */
