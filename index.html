@@ -11,58 +11,24 @@
 body {
     margin: 0;
     font-family: 'Inter', sans-serif;
-    background: radial-gradient(circle at top, #1a1a2e, #0f0f14);
+    background: #0f0f14;
     color: white;
     overflow-x: hidden;
 }
 
-/* glow */
-body::before {
-    content: '';
-    position: fixed;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(120,80,255,0.15), transparent 60%);
-    top: -200px;
-    left: -200px;
-    filter: blur(80px);
-    animation: float 8s ease-in-out infinite;
-}
-
-@keyframes float {
-    0%,100% { transform: translate(0,0); }
-    50% { transform: translate(80px, 60px); }
-}
-
+/* top UI */
 header {
-    padding: 24px;
+    padding: 18px;
     text-align: center;
-    font-size: 30px;
+    font-size: 26px;
     font-weight: 700;
 }
 
-.searchbar {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 10px;
-}
-
-.searchbar input {
-    width: 60%;
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.05);
-    color: white;
-    outline: none;
-}
-
-nav {
+.topbar {
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin: 10px 0;
-    flex-wrap: wrap;
+    padding-bottom: 10px;
 }
 
 button {
@@ -78,52 +44,31 @@ button:hover {
     background: rgba(120,80,255,0.25);
 }
 
-/* 🔥 GRID MODE (PINTEREST) */
+/* =========================
+   GRID MODE (Pinterest)
+========================= */
 .container.grid {
     column-count: 5;
     column-gap: 12px;
     padding: 16px;
 }
 
-/* 🔥 SCROLL MODE */
-.container.scroll {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 16px;
-}
-
-.container.scroll .card {
-    width: 420px;
-    max-width: 95%;
-}
-
-/* responsive grid */
 @media (max-width: 1200px) { .container.grid { column-count: 4; } }
 @media (max-width: 800px) { .container.grid { column-count: 2; } }
-@media (max-width: 500px) { .container.grid { column-count: 1; } }
 
-/* CARD */
 .card {
     break-inside: avoid;
     margin-bottom: 12px;
     border-radius: 14px;
     overflow: hidden;
-    position: relative;
     background: rgba(255,255,255,0.05);
-    transition: 0.2s;
 }
 
-.card:hover {
-    transform: translateY(-3px) scale(1.01);
-}
-
-/* MEDIA */
+/* media */
 .media {
     width: 100%;
     aspect-ratio: 3 / 4;
     position: relative;
-    overflow: hidden;
 }
 
 .media img,
@@ -131,58 +76,86 @@ button:hover {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
 }
 
-/* OVERLAY */
+/* =========================
+   FULLSCREEN SCROLL MODE
+========================= */
+
+.viewer {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #0b0b10;
+    z-index: 999;
+}
+
+/* sidebar */
+.sidebar {
+    width: 220px;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sidebar button {
+    width: 100%;
+    text-align: left;
+}
+
+/* scroll feed */
+.feed {
+    flex: 1;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    height: 100vh;
+}
+
+.feed-item {
+    height: 100vh;
+    scroll-snap-align: start;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* big centered media */
+.full-media {
+    width: 70%;
+    max-width: 600px;
+    aspect-ratio: 3 / 4;
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    background: rgba(255,255,255,0.05);
+}
+
+.full-media img,
+.full-media video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* overlay */
 .overlay {
     position: absolute;
-    inset: 0;
-    background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.75));
-    opacity: 0;
-    transition: 0.2s;
+    bottom: 10px;
+    right: 10px;
     display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    padding: 10px;
-}
-
-.card:hover .overlay {
-    opacity: 1;
+    gap: 8px;
 }
 
 .overlay button {
     font-size: 12px;
-    padding: 6px 10px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    background: rgba(255,255,255,0.15);
-    color: white;
-    backdrop-filter: blur(8px);
 }
 
-/* PROMPTS */
-.content {
-    padding: 12px;
-}
-
-.content h3 {
-    margin: 0 0 6px;
-    font-size: 15px;
-}
-
-.content p {
-    font-size: 13px;
-    opacity: 0.75;
-}
-
-/* toggle button */
-.topbar {
+/* show viewer */
+.viewer.active {
     display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
 }
 </style>
 </head>
@@ -191,18 +164,28 @@ button:hover {
 
 <header>Larp Central</header>
 
-<div class="searchbar">
-    <input id="search" placeholder="Search..." oninput="filterContent()">
-</div>
-
 <div class="topbar">
     <button onclick="loadContent('photos')">Photos</button>
     <button onclick="loadContent('videos')">Videos</button>
     <button onclick="loadContent('prompts')">Prompts</button>
-    <button onclick="toggleView()">Toggle View</button>
+    <button onclick="toggleMode()">Toggle Scroll Mode</button>
 </div>
 
-<div class="container grid" id="container"></div>
+<!-- GRID MODE -->
+<div class="container grid" id="grid"></div>
+
+<!-- FULLSCREEN SCROLL MODE -->
+<div class="viewer" id="viewer">
+
+    <div class="sidebar">
+        <button onclick="loadContent('photos')">Photos</button>
+        <button onclick="loadContent('videos')">Videos</button>
+        <button onclick="loadContent('prompts')">Prompts</button>
+        <button onclick="toggleMode()">Exit</button>
+    </div>
+
+    <div class="feed" id="feed"></div>
+</div>
 
 <script>
 const USER = "tyy-8";
@@ -211,13 +194,17 @@ const BASE = `https://api.github.com/repos/${USER}/${REPO}/contents`;
 
 let allData = [];
 let currentType = "photos";
-let isGrid = true;
+let scrollMode = false;
 
 async function loadContent(type) {
     currentType = type;
-    const container = document.getElementById('container');
-    container.innerHTML = "Loading...";
     allData = [];
+
+    const grid = document.getElementById("grid");
+    const feed = document.getElementById("feed");
+
+    grid.innerHTML = "Loading...";
+    feed.innerHTML = "";
 
     const folderMap = {
         photos: "Photos",
@@ -228,17 +215,49 @@ async function loadContent(type) {
     const res = await fetch(`${BASE}/${folderMap[type]}`);
     const files = await res.json();
 
-    container.innerHTML = "";
+    grid.innerHTML = "";
 
     for (let file of files) {
         let item = { file };
 
+        // ================= GRID =================
         const card = document.createElement("div");
         card.className = "card";
 
         if (type === "photos") {
             card.innerHTML = `
             <div class="media">
+                <img src="${file.download_url}">
+            </div>`;
+        }
+
+        if (type === "videos") {
+            card.innerHTML = `
+            <div class="media">
+                <video src="${file.download_url}" muted></video>
+            </div>`;
+        }
+
+        if (type === "prompts") {
+            const txt = await fetch(file.download_url).then(r => r.text());
+            const lines = txt.split("\n");
+
+            card.innerHTML = `
+            <div style="padding:12px">
+                <h3>${lines[0]}</h3>
+                <p style="opacity:0.7">${lines.slice(1).join(" ")}</p>
+            </div>`;
+        }
+
+        grid.appendChild(card);
+
+        // ================= SCROLL VIEW =================
+        const feedItem = document.createElement("div");
+        feedItem.className = "feed-item";
+
+        if (type === "photos") {
+            feedItem.innerHTML = `
+            <div class="full-media">
                 <img src="${file.download_url}">
                 <div class="overlay">
                     <button onclick="downloadFile('${file.download_url}')">Download</button>
@@ -248,9 +267,9 @@ async function loadContent(type) {
         }
 
         if (type === "videos") {
-            card.innerHTML = `
-            <div class="media">
-                <video src="${file.download_url}" muted></video>
+            feedItem.innerHTML = `
+            <div class="full-media">
+                <video src="${file.download_url}" controls></video>
                 <div class="overlay">
                     <button onclick="downloadFile('${file.download_url}')">Download</button>
                     <button onclick="copyLink('${file.download_url}')">Copy</button>
@@ -258,51 +277,20 @@ async function loadContent(type) {
             </div>`;
         }
 
-        if (type === "prompts") {
-            const txt = await fetch(file.download_url).then(r => r.text());
-            const lines = txt.split("\n");
-
-            item.title = lines[0];
-            item.text = lines.slice(1).join(" ");
-
-            card.innerHTML = `
-            <div class="content">
-                <h3>${item.title}</h3>
-                <p>${item.text}</p>
-            </div>`;
-        }
-
-        item.element = card;
-        allData.push(item);
-        container.appendChild(card);
+        feed.appendChild(feedItem);
     }
 }
 
-function filterContent() {
-    const value = document.getElementById("search").value.toLowerCase();
-    const container = document.getElementById("container");
-    container.innerHTML = "";
+/* TOGGLE MODE */
+function toggleMode() {
+    scrollMode = !scrollMode;
 
-    allData.forEach(item => {
-        const text = (item.file.name + (item.title || "") + (item.text || "")).toLowerCase();
-        if (text.includes(value)) {
-            container.appendChild(item.element);
-        }
-    });
-}
+    const viewer = document.getElementById("viewer");
 
-/* 🔥 VIEW TOGGLE */
-function toggleView() {
-    const container = document.getElementById("container");
-
-    isGrid = !isGrid;
-
-    if (isGrid) {
-        container.classList.remove("scroll");
-        container.classList.add("grid");
+    if (scrollMode) {
+        viewer.classList.add("active");
     } else {
-        container.classList.remove("grid");
-        container.classList.add("scroll");
+        viewer.classList.remove("active");
     }
 }
 
@@ -311,7 +299,6 @@ function downloadFile(url) {
     const a = document.createElement("a");
     a.href = url;
     a.download = "";
-    a.target = "_blank";
     a.click();
 }
 
