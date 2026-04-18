@@ -127,19 +127,21 @@ button:hover {
     box-shadow: 0 20px 50px rgba(120,80,255,0.25);
 }
 
-/* MEDIA */
 .media {
     width: 100%;
+    aspect-ratio: 4 / 5; /* Pinterest-style portrait ratio */
+    background: rgba(0,0,0,0.2);
     overflow: hidden;
+    position: relative;
 }
 
 .media img,
 .media video {
     width: 100%;
-    display: block;
+    height: 100%;
     object-fit: cover;
+    display: block;
 }
-
 /* PROMPTS */
 .content {
     padding: 12px;
