@@ -16,7 +16,6 @@ body {
     overflow-x: hidden;
 }
 
-/* top UI */
 header {
     padding: 18px;
     text-align: center;
@@ -44,9 +43,7 @@ button:hover {
     background: rgba(120,80,255,0.25);
 }
 
-/* =========================
-   GRID MODE (Pinterest)
-========================= */
+/* ================= GRID MODE ================= */
 .container.grid {
     column-count: 5;
     column-gap: 12px;
@@ -62,9 +59,9 @@ button:hover {
     border-radius: 14px;
     overflow: hidden;
     background: rgba(255,255,255,0.05);
+    position: relative;
 }
 
-/* media */
 .media {
     width: 100%;
     aspect-ratio: 3 / 4;
@@ -78,10 +75,7 @@ button:hover {
     object-fit: cover;
 }
 
-/* =========================
-   FULLSCREEN SCROLL MODE
-========================= */
-
+/* ================= FULLSCREEN MODE ================= */
 .viewer {
     display: none;
     position: fixed;
@@ -90,23 +84,22 @@ button:hover {
     z-index: 999;
 }
 
+.viewer.active {
+    display: flex;
+}
+
 /* sidebar */
 .sidebar {
-    width: 220px;
+    width: 200px;
     background: rgba(255,255,255,0.04);
     backdrop-filter: blur(10px);
-    padding: 20px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-.sidebar button {
-    width: 100%;
-    text-align: left;
-}
-
-/* scroll feed */
+/* feed */
 .feed {
     flex: 1;
     overflow-y: scroll;
@@ -122,7 +115,6 @@ button:hover {
     justify-content: center;
 }
 
-/* big centered media */
 .full-media {
     width: 70%;
     max-width: 600px;
@@ -130,7 +122,6 @@ button:hover {
     border-radius: 16px;
     overflow: hidden;
     position: relative;
-    background: rgba(255,255,255,0.05);
 }
 
 .full-media img,
@@ -140,7 +131,7 @@ button:hover {
     object-fit: cover;
 }
 
-/* overlay */
+/* overlay buttons */
 .overlay {
     position: absolute;
     bottom: 10px;
@@ -151,11 +142,7 @@ button:hover {
 
 .overlay button {
     font-size: 12px;
-}
-
-/* show viewer */
-.viewer.active {
-    display: flex;
+    padding: 6px 10px;
 }
 </style>
 </head>
@@ -171,10 +158,10 @@ button:hover {
     <button onclick="toggleMode()">Toggle Scroll Mode</button>
 </div>
 
-<!-- GRID MODE -->
+<!-- GRID -->
 <div class="container grid" id="grid"></div>
 
-<!-- FULLSCREEN SCROLL MODE -->
+<!-- FULLSCREEN VIEWER -->
 <div class="viewer" id="viewer">
 
     <div class="sidebar">
@@ -192,9 +179,9 @@ const USER = "tyy-8";
 const REPO = "larpcentral";
 const BASE = `https://api.github.com/repos/${USER}/${REPO}/contents`;
 
-let allData = [];
-let currentType = "photos";
 let scrollMode = false;
+let currentType = "photos";
+let allData = [];
 
 async function loadContent(type) {
     currentType = type;
@@ -218,26 +205,50 @@ async function loadContent(type) {
     grid.innerHTML = "";
 
     for (let file of files) {
-        let item = { file };
 
-        // ================= GRID =================
         const card = document.createElement("div");
         card.className = "card";
 
+        const feedItem = document.createElement("div");
+        feedItem.className = "feed-item";
+
+        // ================= PHOTOS =================
         if (type === "photos") {
+
             card.innerHTML = `
             <div class="media">
                 <img src="${file.download_url}">
             </div>`;
-        }
 
-        if (type === "videos") {
-            card.innerHTML = `
-            <div class="media">
-                <video src="${file.download_url}" muted></video>
+            feedItem.innerHTML = `
+            <div class="full-media">
+                <img src="${file.download_url}">
+                <div class="overlay">
+                    <button onclick="downloadFile('${file.download_url}','${file.name}')">Download</button>
+                    <button onclick="copyLink('${file.download_url}')">Copy</button>
+                </div>
             </div>`;
         }
 
+        // ================= VIDEOS =================
+        if (type === "videos") {
+
+            card.innerHTML = `
+            <div class="media">
+                <video src="${file.download_url}" muted loop></video>
+            </div>`;
+
+            feedItem.innerHTML = `
+            <div class="full-media">
+                <video class="feed-video" src="${file.download_url}" muted loop playsinline></video>
+                <div class="overlay">
+                    <button onclick="downloadFile('${file.download_url}','${file.name}')">Download</button>
+                    <button onclick="copyLink('${file.download_url}')">Copy</button>
+                </div>
+            </div>`;
+        }
+
+        // ================= PROMPTS =================
         if (type === "prompts") {
             const txt = await fetch(file.download_url).then(r => r.text());
             const lines = txt.split("\n");
@@ -247,61 +258,59 @@ async function loadContent(type) {
                 <h3>${lines[0]}</h3>
                 <p style="opacity:0.7">${lines.slice(1).join(" ")}</p>
             </div>`;
+
+            feedItem.innerHTML = card.innerHTML;
         }
 
         grid.appendChild(card);
-
-        // ================= SCROLL VIEW =================
-        const feedItem = document.createElement("div");
-        feedItem.className = "feed-item";
-
-        if (type === "photos") {
-            feedItem.innerHTML = `
-            <div class="full-media">
-                <img src="${file.download_url}">
-                <div class="overlay">
-                    <button onclick="downloadFile('${file.download_url}')">Download</button>
-                    <button onclick="copyLink('${file.download_url}')">Copy</button>
-                </div>
-            </div>`;
-        }
-
-        if (type === "videos") {
-            feedItem.innerHTML = `
-            <div class="full-media">
-                <video src="${file.download_url}" controls></video>
-                <div class="overlay">
-                    <button onclick="downloadFile('${file.download_url}')">Download</button>
-                    <button onclick="copyLink('${file.download_url}')">Copy</button>
-                </div>
-            </div>`;
-        }
-
         feed.appendChild(feedItem);
     }
+
+    setupAutoPlay();
 }
 
-/* TOGGLE MODE */
+/* ================= AUTOPLAY ================= */
+function setupAutoPlay() {
+    const videos = document.querySelectorAll(".feed-video");
+
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            const video = entry.target;
+
+            if (entry.isIntersecting) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        });
+    }, { threshold: 0.6 });
+
+    videos.forEach(v => observer.observe(v));
+}
+
+/* ================= MODE TOGGLE ================= */
 function toggleMode() {
     scrollMode = !scrollMode;
-
-    const viewer = document.getElementById("viewer");
-
-    if (scrollMode) {
-        viewer.classList.add("active");
-    } else {
-        viewer.classList.remove("active");
-    }
+    document.getElementById("viewer").classList.toggle("active", scrollMode);
 }
 
-/* actions */
-function downloadFile(url) {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "";
-    a.click();
+/* ================= DOWNLOAD (REAL FIX) ================= */
+function downloadFile(url, filename) {
+    fetch(url)
+        .then(r => r.blob())
+        .then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = blobUrl;
+            a.download = filename || "download";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(blobUrl);
+        });
 }
 
+/* ================= COPY ================= */
 function copyLink(url) {
     navigator.clipboard.writeText(url);
 }
