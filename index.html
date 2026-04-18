@@ -5,21 +5,56 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Larp Central</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
 body {
     margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background: #0f0f14;
+    font-family: 'Inter', sans-serif;
+    background: radial-gradient(circle at top, #1a1a2e, #0f0f14);
     color: white;
+    overflow-x: hidden;
+}
+
+/* subtle animated background glow */
+body::before {
+    content: '';
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(120,80,255,0.15), transparent 60%);
+    top: -200px;
+    left: -200px;
+    filter: blur(80px);
+    animation: float 8s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%,100% { transform: translate(0,0); }
+    50% { transform: translate(80px, 60px); }
 }
 
 header {
-    padding: 20px;
+    padding: 24px;
     text-align: center;
-    font-size: 28px;
-    font-weight: bold;
-    background: #15151d;
-    position: sticky;
-    top: 0;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.searchbar {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.searchbar input {
+    width: 60%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: white;
+    outline: none;
     backdrop-filter: blur(10px);
 }
 
@@ -27,24 +62,24 @@ nav {
     display: flex;
     justify-content: center;
     gap: 12px;
-    margin: 20px 0;
+    margin: 15px 0 25px;
     flex-wrap: wrap;
 }
 
 button {
-    padding: 10px 18px;
-    border: none;
+    padding: 10px 16px;
+    border: 1px solid rgba(255,255,255,0.1);
     border-radius: 12px;
-    background: #1f1f2a;
+    background: rgba(255,255,255,0.05);
     color: white;
     cursor: pointer;
-    transition: 0.2s;
-    font-weight: 500;
+    transition: 0.25s;
+    backdrop-filter: blur(10px);
 }
 
 button:hover {
-    background: #34344a;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    background: rgba(120,80,255,0.25);
 }
 
 .container {
@@ -55,22 +90,30 @@ button:hover {
 }
 
 .card {
-    background: #1a1a24;
-    border-radius: 16px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
     overflow: hidden;
-    transition: 0.2s;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    transition: 0.3s;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
 }
 
 .card:hover {
-    transform: scale(1.03);
+    transform: scale(1.04);
+    box-shadow: 0 20px 50px rgba(120,80,255,0.25);
 }
 
 .card img, .card video {
     width: 100%;
     height: 220px;
     object-fit: cover;
-    background: #000;
 }
 
 .card .content {
@@ -79,12 +122,12 @@ button:hover {
 
 .card h3 {
     margin: 0 0 6px;
-    font-size: 16px;
+    font-size: 15px;
 }
 
 .card p {
     font-size: 13px;
-    opacity: 0.8;
+    opacity: 0.75;
     line-height: 1.4;
 }
 
@@ -99,6 +142,10 @@ button:hover {
 
 <header>Larp Central</header>
 
+<div class="searchbar">
+    <input id="search" placeholder="Search prompts, images, videos..." oninput="filterContent()">
+</div>
+
 <nav>
     <button onclick="loadContent('photos')">Photos</button>
     <button onclick="loadContent('videos')">Videos</button>
@@ -108,55 +155,78 @@ button:hover {
 <div class="container" id="container"></div>
 
 <script>
-// 🔥 CHANGE THESE
-const USER = "tyy-8";
+const USER = "YOUR_GITHUB_USERNAME";
 const REPO = "larpcentral";
-const BASE = `https://api.github.com/repos/${USER}/${REPO}/contents/public/content`;
+const BASE = `https://api.github.com/repos/${USER}/${REPO}/contents`;
+
+let allData = [];
+let currentType = "photos";
 
 async function loadContent(type) {
+    currentType = type;
     const container = document.getElementById('container');
-    container.innerHTML = '<div class="loader">Loading...</div>';
+    container.innerHTML = "Loading...";
 
-    try {
-        const res = await fetch(`${BASE}/${type}`);
-        const files = await res.json();
+    const folderMap = {
+        photos: "Photos",
+        videos: "Videos",
+        prompts: "Prompts"
+    };
 
-        container.innerHTML = "";
+    const res = await fetch(`${BASE}/${folderMap[type]}`);
+    const files = await res.json();
 
-        for (let file of files) {
-            const card = document.createElement('div');
-            card.className = 'card';
+    container.innerHTML = "";
+    allData = [];
 
-            if (type === "photos") {
-                card.innerHTML = `<img src="${file.download_url}">`;
-            }
+    for (let file of files) {
+        let item = { type, file };
 
-            if (type === "videos") {
-                card.innerHTML = `<video controls src="${file.download_url}"></video>`;
-            }
+        const card = document.createElement("div");
+        card.className = "card";
 
-            if (type === "prompts") {
-                const txt = await fetch(file.download_url).then(r => r.text());
-                const lines = txt.split("\n");
-
-                card.innerHTML = `
-                    <div class="content">
-                        <h3>${lines[0] || "Untitled"}</h3>
-                        <p>${lines.slice(1).join(" ")}</p>
-                    </div>
-                `;
-            }
-
-            container.appendChild(card);
+        if (type === "photos") {
+            card.innerHTML = `<img src="${file.download_url}">`;
         }
 
-    } catch (err) {
-        container.innerHTML = "Failed to load content.";
-        console.error(err);
+        if (type === "videos") {
+            card.innerHTML = `<video controls src="${file.download_url}"></video>`;
+        }
+
+        if (type === "prompts") {
+            const txt = await fetch(file.download_url).then(r => r.text());
+            const lines = txt.split("\n");
+
+            item.title = lines[0];
+            item.text = lines.slice(1).join(" ");
+
+            card.innerHTML = `
+                <div class="content">
+                    <h3>${item.title}</h3>
+                    <p>${item.text}</p>
+                </div>
+            `;
+        }
+
+        item.element = card;
+        allData.push(item);
+        container.appendChild(card);
     }
 }
 
-// default load
+function filterContent() {
+    const value = document.getElementById("search").value.toLowerCase();
+    const container = document.getElementById("container");
+    container.innerHTML = "";
+
+    allData.forEach(item => {
+        const text = (item.file.name + (item.title || "") + (item.text || "")).toLowerCase();
+        if (text.includes(value)) {
+            container.appendChild(item.element);
+        }
+    });
+}
+
 loadContent("photos");
 </script>
 
