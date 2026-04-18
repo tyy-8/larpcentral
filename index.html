@@ -114,14 +114,14 @@ button:hover {
     align-items: center;
     justify-content: center;
 }
-
+    
 .full-media {
     width: 70%;
     max-width: 600px;
     aspect-ratio: 3 / 4;
     border-radius: 16px;
     overflow: hidden;
-    position: relative;
+    position: relative; 
 }
 
 .full-media img,
@@ -134,10 +134,15 @@ button:hover {
 /* overlay buttons */
 .overlay {
     position: absolute;
-    bottom: 10px;
-    right: 10px;
+    inset: 0;
     display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
     gap: 8px;
+    padding: 12px;
+
+    background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.75));
+    opacity: 1; /* ALWAYS visible in scroll mode */
 }
 
 .overlay button {
@@ -237,10 +242,10 @@ async function loadContent(type) {
             <div class="media">
                 <video src="${file.download_url}" muted loop></video>
             </div>`;
-
             feedItem.innerHTML = `
             <div class="full-media">
                 <video class="feed-video" src="${file.download_url}" muted loop playsinline></video>
+            
                 <div class="overlay">
                     <button onclick="downloadFile('${file.download_url}','${file.name}')">Download</button>
                     <button onclick="copyLink('${file.download_url}')">Copy</button>
