@@ -260,12 +260,28 @@ function downloadCurrent() {
 }
 
 /* COPY CURRENT */
-function copyCurrent() {
+async function copyCurrent() {
     const item = currentItems[currentIndex];
     if (!item) return;
-    navigator.clipboard.writeText(item.url);
-}
 
+    try {
+        const res = await fetch(item.url);
+        const blob = await res.blob();
+
+        // IMAGE COPY (works in modern Chromium browsers)
+        await navigator.clipboard.write([
+            new ClipboardItem({ [blob.type]: blob })
+        ]);
+
+        alert("Image copied to clipboard");
+    } catch (err) {
+        console.log("Clipboard image copy failed:", err);
+
+        // fallback: copy link if image copy not supported
+        navigator.clipboard.writeText(item.url);
+        alert("Device doesn't support image copy — copied link instead");
+    }
+}
 /* INIT */
 load("Photos");
 </script>
