@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Larp Central</title>
 
 <style>
@@ -10,144 +10,81 @@
 
 body {
     margin: 0;
-    font-family: 'Inter', sans-serif;
-    background: #0f0f14;
-    color: white;
-    overflow-x: hidden;
-}
-
-header {
-    padding: 18px;
-    text-align: center;
-    font-size: 26px;
-    font-weight: 700;
-}
-
-.topbar {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    padding-bottom: 10px;
-}
-
-button {
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.05);
-    color: white;
-    cursor: pointer;
-}
-
-button:hover {
-    background: rgba(120,80,255,0.25);
-}
-
-/* ================= GRID MODE ================= */
-.container.grid {
-    column-count: 5;
-    column-gap: 12px;
-    padding: 16px;
-}
-
-@media (max-width: 1200px) { .container.grid { column-count: 4; } }
-@media (max-width: 800px) { .container.grid { column-count: 2; } }
-
-.card {
-    break-inside: avoid;
-    margin-bottom: 12px;
-    border-radius: 14px;
-    overflow: hidden;
-    background: rgba(255,255,255,0.05);
-    position: relative;
-}
-
-.media {
-    width: 100%;
-    aspect-ratio: 3 / 4;
-    position: relative;
-}
-
-.media img,
-.media video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* ================= FULLSCREEN MODE ================= */
-.viewer {
-    display: none;
-    position: fixed;
-    inset: 0;
+    font-family: Inter, sans-serif;
     background: #0b0b10;
-    z-index: 999;
+    color: white;
+    overflow: hidden;
 }
 
-.viewer.active {
-    display: flex;
-}
-
-/* sidebar */
-.sidebar {
-    width: 200px;
-    background: rgba(255,255,255,0.04);
+/* HEADER */
+header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    text-align: center;
+    padding: 14px;
+    font-size: 22px;
+    font-weight: 700;
+    z-index: 10;
+    background: rgba(10,10,15,0.6);
     backdrop-filter: blur(10px);
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
 }
 
-/* feed */
+/* FEED */
 .feed {
-    flex: 1;
+    height: 100vh;
     overflow-y: scroll;
     scroll-snap-type: y mandatory;
-    height: 100vh;
 }
 
-.feed-item {
+/* ITEM */
+.item {
     height: 100vh;
     scroll-snap-align: start;
     display: flex;
     align-items: center;
     justify-content: center;
 }
-    
-.full-media {
+
+/* MEDIA BOX */
+.media {
     width: 70%;
     max-width: 600px;
-    aspect-ratio: 3 / 4;
     border-radius: 16px;
     overflow: hidden;
-    position: relative; 
+    background: rgba(255,255,255,0.05);
+    position: relative;
 }
 
-.full-media img,
-.full-media video {
+/* IMAGE / VIDEO */
+.media img,
+.media video {
     width: 100%;
-    height: 100%;
+    display: block;
     object-fit: cover;
 }
 
-/* overlay buttons */
+/* OVERLAY UNDER MEDIA (your request) */
 .overlay {
-    position: absolute;
-    inset: 0;
     display: flex;
-    align-items: flex-end;
     justify-content: flex-end;
     gap: 8px;
-    padding: 12px;
-
-    background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.75));
-    opacity: 1; /* ALWAYS visible in scroll mode */
+    padding: 10px;
+    background: rgba(20,20,30,0.85);
 }
 
 .overlay button {
     font-size: 12px;
     padding: 6px 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    background: rgba(255,255,255,0.15);
+    color: white;
+}
+
+.overlay button:hover {
+    background: rgba(120,80,255,0.4);
 }
 </style>
 </head>
@@ -156,77 +93,34 @@ button:hover {
 
 <header>Larp Central</header>
 
-<div class="topbar">
-    <button onclick="loadContent('photos')">Photos</button>
-    <button onclick="loadContent('videos')">Videos</button>
-    <button onclick="loadContent('prompts')">Prompts</button>
-    <button onclick="toggleMode()">Toggle Scroll Mode</button>
-</div>
-
-<!-- GRID -->
-<div class="container grid" id="grid"></div>
-
-<!-- FULLSCREEN VIEWER -->
-<div class="viewer" id="viewer">
-
-    <div class="sidebar">
-        <button onclick="loadContent('photos')">Photos</button>
-        <button onclick="loadContent('videos')">Videos</button>
-        <button onclick="loadContent('prompts')">Prompts</button>
-        <button onclick="toggleMode()">Exit</button>
-    </div>
-
-    <div class="feed" id="feed"></div>
-</div>
+<div class="feed" id="feed"></div>
 
 <script>
 const USER = "tyy-8";
 const REPO = "larpcentral";
-const BASE = `https://api.github.com/repos/${USER}/${REPO}/contents`;
+const BASE = `https://api.github.com/repos/${USER}/${REPO}/contents/Photos`;
 
-let scrollMode = false;
-let currentType = "photos";
-let allData = [];
+let observer;
 
-async function loadContent(type) {
-    currentType = type;
-    allData = [];
-
-    const grid = document.getElementById("grid");
+/* LOAD ONLY PHOTOS + VIDEOS */
+async function load() {
     const feed = document.getElementById("feed");
+    feed.innerHTML = "Loading...";
 
-    grid.innerHTML = "Loading...";
-    feed.innerHTML = "";
-
-    const folderMap = {
-        photos: "Photos",
-        videos: "Videos",
-        prompts: "Prompts"
-    };
-
-    const res = await fetch(`${BASE}/${folderMap[type]}`);
+    const res = await fetch(BASE);
     const files = await res.json();
 
-    grid.innerHTML = "";
+    feed.innerHTML = "";
 
     for (let file of files) {
 
-        const card = document.createElement("div");
-        card.className = "card";
+        const item = document.createElement("div");
+        item.className = "item";
 
-        const feedItem = document.createElement("div");
-        feedItem.className = "feed-item";
-
-        // ================= PHOTOS =================
-        if (type === "photos") {
-
-            card.innerHTML = `
+        // IMAGE
+        if (file.name.match(/\.(jpg|png|jpeg|webp)$/)) {
+            item.innerHTML = `
             <div class="media">
-                <img src="${file.download_url}">
-            </div>`;
-
-            feedItem.innerHTML = `
-            <div class="full-media">
                 <img src="${file.download_url}">
                 <div class="overlay">
                     <button onclick="downloadFile('${file.download_url}','${file.name}')">Download</button>
@@ -235,17 +129,12 @@ async function loadContent(type) {
             </div>`;
         }
 
-        // ================= VIDEOS =================
-        if (type === "videos") {
-
-            card.innerHTML = `
+        // VIDEO
+        if (file.name.match(/\.(mp4|webm|mov)$/)) {
+            item.innerHTML = `
             <div class="media">
-                <video src="${file.download_url}" muted loop></video>
-            </div>`;
-            feedItem.innerHTML = `
-            <div class="full-media">
-                <video class="feed-video" src="${file.download_url}" muted loop playsinline></video>
-            
+                <video class="vid" src="${file.download_url}" muted loop playsinline></video>
+
                 <div class="overlay">
                     <button onclick="downloadFile('${file.download_url}','${file.name}')">Download</button>
                     <button onclick="copyLink('${file.download_url}')">Copy</button>
@@ -253,61 +142,44 @@ async function loadContent(type) {
             </div>`;
         }
 
-        // ================= PROMPTS =================
-        if (type === "prompts") {
-            const txt = await fetch(file.download_url).then(r => r.text());
-            const lines = txt.split("\n");
-
-            card.innerHTML = `
-            <div style="padding:12px">
-                <h3>${lines[0]}</h3>
-                <p style="opacity:0.7">${lines.slice(1).join(" ")}</p>
-            </div>`;
-
-            feedItem.innerHTML = card.innerHTML;
-        }
-
-        grid.appendChild(card);
-        feed.appendChild(feedItem);
+        feed.appendChild(item);
     }
 
-    setupAutoPlay();
+    setupAutoplay();
 }
 
-/* ================= AUTOPLAY ================= */
-function setupAutoPlay() {
-    const videos = document.querySelectorAll(".feed-video");
+/* AUTOPLAY */
+function setupAutoplay() {
+    const videos = document.querySelectorAll(".vid");
 
-    const observer = new IntersectionObserver(entries => {
+    observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
-            const video = entry.target;
+            const v = entry.target;
 
             if (entry.isIntersecting) {
-                video.play();
+                v.play().catch(() => {});
             } else {
-                video.pause();
+                v.pause();
             }
         });
-    }, { threshold: 0.6 });
+    }, { threshold: 0.75 });
 
-    videos.forEach(v => observer.observe(v));
+    videos.forEach(v => {
+        v.muted = true;
+        v.playsInline = true;
+        observer.observe(v);
+    });
 }
 
-/* ================= MODE TOGGLE ================= */
-function toggleMode() {
-    scrollMode = !scrollMode;
-    document.getElementById("viewer").classList.toggle("active", scrollMode);
-}
-
-/* ================= DOWNLOAD (REAL FIX) ================= */
-function downloadFile(url, filename) {
+/* REAL DOWNLOAD */
+function downloadFile(url, name) {
     fetch(url)
         .then(r => r.blob())
         .then(blob => {
             const blobUrl = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = blobUrl;
-            a.download = filename || "download";
+            a.download = name;
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -315,12 +187,12 @@ function downloadFile(url, filename) {
         });
 }
 
-/* ================= COPY ================= */
+/* COPY */
 function copyLink(url) {
     navigator.clipboard.writeText(url);
 }
 
-loadContent("photos");
+load();
 </script>
 
 </body>
