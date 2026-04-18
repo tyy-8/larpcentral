@@ -27,7 +27,7 @@ header {
     font-weight: 700;
     z-index: 20;
     background: rgba(10,10,15,0.6);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
 }
 
 /* CATEGORY BAR */
@@ -54,7 +54,7 @@ header {
     background: rgba(120,80,255,0.25);
 }
 
-/* SIDE CONTROL PANEL */
+/* SIDE PANEL */
 .sidepanel {
     position: fixed;
     right: 20px;
@@ -80,38 +80,47 @@ header {
     background: rgba(120,80,255,0.4);
 }
 
-/* FEED */
+/* FEED (SMOOTH SCROLL FIX) */
 .feed {
     height: 100vh;
     overflow-y: scroll;
     scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
 }
 
-/* ITEM */
+/* ITEM (NO OVERLAP FIX) */
 .item {
     height: 100vh;
+    width: 100vw;
     scroll-snap-align: start;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
 
-/* MEDIA */
+/* MEDIA CONTAINER */
 .media, .prompt {
-    width: 70%;
-    max-width: 650px;
+    width: min(650px, 90vw);
+    max-height: 85vh;
     border-radius: 16px;
     overflow: hidden;
     background: rgba(255,255,255,0.05);
     box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
 }
 
-/* IMAGE / VIDEO */
+/* IMAGE / VIDEO FIX */
 .media img,
 .media video {
     width: 100%;
+    height: auto;
+    max-height: 85vh;
+    object-fit: contain;
+    background: black;
     display: block;
-    object-fit: cover;
 }
 
 /* PROMPTS */
@@ -119,7 +128,7 @@ header {
     padding: 20px;
 }
 
-/* HIDE OLD OVERLAY STYLE (NOT USED ANYMORE) */
+/* HIDE OLD OVERLAY */
 .overlay { display: none; }
 </style>
 </head>
@@ -134,7 +143,7 @@ header {
     <button onclick="load('Prompts')">Prompts</button>
 </div>
 
-<!-- SIDE ACTIONS -->
+<!-- SIDE CONTROLS -->
 <div class="sidepanel">
     <button onclick="downloadCurrent()">Download</button>
     <button onclick="copyCurrent()">Copy</button>
@@ -151,7 +160,7 @@ const BASE = `https://api.github.com/repos/${USER}/${REPO}/contents`;
 let currentItems = [];
 let currentIndex = 0;
 
-/* LOAD CATEGORY */
+/* LOAD */
 async function load(folder) {
     const feed = document.getElementById("feed");
     feed.innerHTML = "Loading...";
@@ -204,23 +213,27 @@ async function load(folder) {
     setupObserver();
 }
 
-/* TRACK CURRENT ITEM */
+/* AUTOPLAY + TRACK CURRENT ITEM */
 function setupObserver() {
     const items = document.querySelectorAll(".item");
 
     const observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
+
                 currentIndex = [...items].indexOf(entry.target);
 
                 const video = entry.target.querySelector("video");
-                if (video) video.play().catch(() => {});
+                if (video) {
+                    video.play().catch(() => {});
+                }
+
             } else {
                 const video = entry.target.querySelector("video");
                 if (video) video.pause();
             }
         });
-    }, { threshold: 0.7 });
+    }, { threshold: 0.75 });
 
     items.forEach(i => observer.observe(i));
 }
