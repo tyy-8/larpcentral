@@ -16,7 +16,7 @@ body {
     overflow-x: hidden;
 }
 
-/* background glow */
+/* glow */
 body::before {
     content: '';
     position: fixed;
@@ -27,7 +27,6 @@ body::before {
     left: -200px;
     filter: blur(80px);
     animation: float 8s ease-in-out infinite;
-    z-index: 0;
 }
 
 @keyframes float {
@@ -40,17 +39,12 @@ header {
     text-align: center;
     font-size: 30px;
     font-weight: 700;
-    letter-spacing: 1px;
-    position: relative;
-    z-index: 1;
 }
 
 .searchbar {
     display: flex;
     justify-content: center;
     margin-bottom: 10px;
-    position: relative;
-    z-index: 1;
 }
 
 .searchbar input {
@@ -61,78 +55,75 @@ header {
     background: rgba(255,255,255,0.05);
     color: white;
     outline: none;
-    backdrop-filter: blur(10px);
 }
 
 nav {
     display: flex;
     justify-content: center;
-    gap: 12px;
-    margin: 15px 0 25px;
+    gap: 10px;
+    margin: 10px 0;
     flex-wrap: wrap;
-    position: relative;
-    z-index: 1;
 }
 
 button {
-    padding: 10px 16px;
+    padding: 10px 14px;
+    border-radius: 10px;
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
     background: rgba(255,255,255,0.05);
     color: white;
     cursor: pointer;
-    transition: 0.25s;
-    backdrop-filter: blur(10px);
 }
 
 button:hover {
-    transform: translateY(-2px);
     background: rgba(120,80,255,0.25);
 }
 
-/* 🔥 PINTEREST MASONRY */
-.container {
-    column-count: 4;
-    column-gap: 16px;
-    padding: 20px;
-    position: relative;
-    z-index: 1;
+/* 🔥 GRID MODE (PINTEREST) */
+.container.grid {
+    column-count: 5;
+    column-gap: 12px;
+    padding: 16px;
 }
 
-@media (max-width: 1200px) {
-    .container { column-count: 3; }
+/* 🔥 SCROLL MODE */
+.container.scroll {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
 }
-@media (max-width: 800px) {
-    .container { column-count: 2; }
+
+.container.scroll .card {
+    width: 420px;
+    max-width: 95%;
 }
-@media (max-width: 500px) {
-    .container { column-count: 1; }
-}
+
+/* responsive grid */
+@media (max-width: 1200px) { .container.grid { column-count: 4; } }
+@media (max-width: 800px) { .container.grid { column-count: 2; } }
+@media (max-width: 500px) { .container.grid { column-count: 1; } }
 
 /* CARD */
 .card {
     break-inside: avoid;
-    margin-bottom: 16px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 18px;
+    margin-bottom: 12px;
+    border-radius: 14px;
     overflow: hidden;
-    transition: 0.25s;
-    backdrop-filter: blur(14px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    position: relative;
+    background: rgba(255,255,255,0.05);
+    transition: 0.2s;
 }
 
 .card:hover {
-    transform: translateY(-4px) scale(1.01);
-    box-shadow: 0 20px 50px rgba(120,80,255,0.25);
+    transform: translateY(-3px) scale(1.01);
 }
 
+/* MEDIA */
 .media {
     width: 100%;
-    aspect-ratio: 4 / 5; /* Pinterest-style portrait ratio */
-    background: rgba(0,0,0,0.2);
-    overflow: hidden;
+    aspect-ratio: 3 / 4;
     position: relative;
+    overflow: hidden;
 }
 
 .media img,
@@ -142,6 +133,35 @@ button:hover {
     object-fit: cover;
     display: block;
 }
+
+/* OVERLAY */
+.overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.75));
+    opacity: 0;
+    transition: 0.2s;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 10px;
+}
+
+.card:hover .overlay {
+    opacity: 1;
+}
+
+.overlay button {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    backdrop-filter: blur(8px);
+}
+
 /* PROMPTS */
 .content {
     padding: 12px;
@@ -155,14 +175,14 @@ button:hover {
 .content p {
     font-size: 13px;
     opacity: 0.75;
-    line-height: 1.4;
 }
 
-/* loader */
-.loader {
-    text-align: center;
-    padding: 40px;
-    opacity: 0.7;
+/* toggle button */
+.topbar {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 </style>
 </head>
@@ -172,16 +192,17 @@ button:hover {
 <header>Larp Central</header>
 
 <div class="searchbar">
-    <input id="search" placeholder="Search prompts, images, videos..." oninput="filterContent()">
+    <input id="search" placeholder="Search..." oninput="filterContent()">
 </div>
 
-<nav>
+<div class="topbar">
     <button onclick="loadContent('photos')">Photos</button>
     <button onclick="loadContent('videos')">Videos</button>
     <button onclick="loadContent('prompts')">Prompts</button>
-</nav>
+    <button onclick="toggleView()">Toggle View</button>
+</div>
 
-<div class="container" id="container"></div>
+<div class="container grid" id="container"></div>
 
 <script>
 const USER = "tyy-8";
@@ -190,11 +211,13 @@ const BASE = `https://api.github.com/repos/${USER}/${REPO}/contents`;
 
 let allData = [];
 let currentType = "photos";
+let isGrid = true;
 
 async function loadContent(type) {
     currentType = type;
     const container = document.getElementById('container');
     container.innerHTML = "Loading...";
+    allData = [];
 
     const folderMap = {
         photos: "Photos",
@@ -206,28 +229,33 @@ async function loadContent(type) {
     const files = await res.json();
 
     container.innerHTML = "";
-    allData = [];
 
     for (let file of files) {
-        let item = { type, file };
+        let item = { file };
 
         const card = document.createElement("div");
         card.className = "card";
 
         if (type === "photos") {
             card.innerHTML = `
-                <div class="media">
-                    <img src="${file.download_url}">
+            <div class="media">
+                <img src="${file.download_url}">
+                <div class="overlay">
+                    <button onclick="downloadFile('${file.download_url}')">Download</button>
+                    <button onclick="copyLink('${file.download_url}')">Copy</button>
                 </div>
-            `;
+            </div>`;
         }
 
         if (type === "videos") {
             card.innerHTML = `
-                <div class="media">
-                    <video controls src="${file.download_url}"></video>
+            <div class="media">
+                <video src="${file.download_url}" muted></video>
+                <div class="overlay">
+                    <button onclick="downloadFile('${file.download_url}')">Download</button>
+                    <button onclick="copyLink('${file.download_url}')">Copy</button>
                 </div>
-            `;
+            </div>`;
         }
 
         if (type === "prompts") {
@@ -238,11 +266,10 @@ async function loadContent(type) {
             item.text = lines.slice(1).join(" ");
 
             card.innerHTML = `
-                <div class="content">
-                    <h3>${item.title}</h3>
-                    <p>${item.text}</p>
-                </div>
-            `;
+            <div class="content">
+                <h3>${item.title}</h3>
+                <p>${item.text}</p>
+            </div>`;
         }
 
         item.element = card;
@@ -257,16 +284,39 @@ function filterContent() {
     container.innerHTML = "";
 
     allData.forEach(item => {
-        const text = (
-            item.file.name +
-            (item.title || "") +
-            (item.text || "")
-        ).toLowerCase();
-
+        const text = (item.file.name + (item.title || "") + (item.text || "")).toLowerCase();
         if (text.includes(value)) {
             container.appendChild(item.element);
         }
     });
+}
+
+/* 🔥 VIEW TOGGLE */
+function toggleView() {
+    const container = document.getElementById("container");
+
+    isGrid = !isGrid;
+
+    if (isGrid) {
+        container.classList.remove("scroll");
+        container.classList.add("grid");
+    } else {
+        container.classList.remove("grid");
+        container.classList.add("scroll");
+    }
+}
+
+/* actions */
+function downloadFile(url) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "";
+    a.target = "_blank";
+    a.click();
+}
+
+function copyLink(url) {
+    navigator.clipboard.writeText(url);
 }
 
 loadContent("photos");
