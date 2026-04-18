@@ -259,27 +259,24 @@ function downloadCurrent() {
         });
 }
 
-/* COPY CURRENT */
 async function copyCurrent() {
     const item = currentItems[currentIndex];
     if (!item) return;
 
     try {
-        const res = await fetch(item.url);
+        const res = await fetch(item.url, { mode: "cors" });
         const blob = await res.blob();
 
-        // IMAGE COPY (works in modern Chromium browsers)
-        await navigator.clipboard.write([
-            new ClipboardItem({ [blob.type]: blob })
-        ]);
+        const data = [new ClipboardItem({ [blob.type]: blob })];
 
-        alert("Image copied to clipboard");
+        await navigator.clipboard.write(data);
+
+        showToast("Image copied ✔");
     } catch (err) {
-        console.log("Clipboard image copy failed:", err);
+        console.log("Image copy failed:", err);
 
-        // fallback: copy link if image copy not supported
-        navigator.clipboard.writeText(item.url);
-        alert("Device doesn't support image copy — copied link instead");
+        // fallback: download trick (works everywhere)
+        await fallbackCopyAsImage(item.url);
     }
 }
 /* INIT */
